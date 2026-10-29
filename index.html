@@ -17,8 +17,10 @@
     <button onclick="sendMessage()">Send</button>
 
     <script>
-        // 1. Establish connection to the Python server
-        var ws = new WebSocket("ws://" + window.location.host + "/ws");
+        
+        // Check if the site is secure, and use the correct WebSocket protocol
+        var wsProtocol = window.location.protocol === "https:" ? "wss://" : "ws://";
+        var ws = new WebSocket(wsProtocol + window.location.host + "/ws/" + username);
         
         // 2. What to do when a message arrives from the server
         ws.onmessage = function(event) {
