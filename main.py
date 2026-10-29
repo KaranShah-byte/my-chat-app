@@ -1,86 +1,48 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.responses import HTMLResponse
-from typing import List
-import sqlite3  # NEW: Python's built-in database library
 
 app = FastAPI()
 
-# --- DATABASE SYSTEM DESIGN ---
-def init_db():
-    # This creates a file named chat.db in your folder
-    conn = sqlite3.connect("chat.db")
-    cursor = conn.cursor()
-    # SQL to create our table if it doesn't exist yet
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS messages (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            content TEXT NOT NULL
-        )
-    ''')
-    conn.commit()
-    conn.close()
+# This dictionary stores all our active chat rooms
+# Example: {"General": [user1, user2], "DSA-Study": [user3]}
+rooms: dict[str, list[WebSocket]] = {}
 
-# Run database setup when the file is loaded
-init_db()
-
-def save_message(message: str):
-    conn = sqlite3.connect("chat.db")
-    cursor = conn.cursor()
-    cursor.execute("INSERT INTO messages (content) VALUES (?)", (message,))
-    conn.commit()
-    conn.close()
-
-def get_chat_history():
-    conn = sqlite3.connect("chat.db")
-    cursor = conn.cursor()
-    # Fetch all past messages to show newly connected users
-    cursor.execute("SELECT content FROM messages ORDER BY id ASC")
-    messages = cursor.fetchall()
-    conn.close()
-    return [msg[0] for msg in messages]
-# ------------------------------
-
-@app.get("/")
-async def get():
-    with open("index.html", "r") as f:
-        return HTMLResponse(f.read())
-
-class ConnectionManager:
-    def __init__(self):
-        self.active_connections: List[WebSocket] = []
-
-    async def connect(self, websocket: WebSocket):
-        await websocket.accept()
-        self.active_connections.append(websocket)
-        
-        # NEW: When someone connects, send them the chat history!
-        history = get_chat_history()
-        for msg in history:
-            await websocket.send_text(msg)
-
-    def disconnect(self, websocket: WebSocket):
-        self.active_connections.remove(websocket)
-
-    async def broadcast(self, message: str):
-        for connection in self.active_connections:
-            await connection.send_text(message)
-
-manager = ConnectionManager()
-
-@app.websocket("/ws/{username}")
-async def websocket_endpoint(websocket: WebSocket, username: str):
-    await manager.connect(websocket)
+@app.websocket("/ws/{room_name}/{username}")
+async def websocket_endpoint(websocket: WebSocket, room_name: str, username: str):
+    # Accept the incoming connection
+    await websocket.accept()
+    
+    # 1. If this is a new room, create it in our dictionary
+    if room_name not in rooms:
+        rooms[room_name] = []
+    
+    # 2. Add the user's WebSocket connection to this specific room
+    rooms[room_name].append(websocket)
+    
     try:
+        # Announce to the room that a new user joined
+        join_msg = f"🟢 {username} joined {room_name}."
+        for client in rooms[room_name]:
+            await client.send_text(join_msg)
+
+        # Keep listening for new messages from this user
         while True:
             data = await websocket.receive_text()
-            formatted_message = f"User says: {data}"
+            formatted_message = f"{username}: {data}"
             
-            # NEW: Save to disk before sending to other users
-            save_message(formatted_message)
-            
-            await manager.broadcast(formatted_message)
+            # 3. Broadcast the message ONLY to people in this exact room
+            for client in rooms[room_name]:
+                await client.send_text(formatted_message)
+                
     except WebSocketDisconnect:
-        manager.disconnect(websocket)
-        leave_msg = "A user left the chat."
-        save_message(leave_msg)
-        await manager.broadcast(leave_msg)
+        # 4. If the user closes the tab, remove them from the room
+        if websocket in rooms[room_name]:
+            rooms[room_name].remove(websocket)
+        
+        # If the room is now empty, delete it to save server memory
+        if not rooms[room_name]:  
+            del rooms[room_name]
+        else:
+            # Otherwise, tell the remaining users that someone left
+            leave_msg = f"🔴 {username} left {room_name}."
+            for client in rooms[room_name]:
+                await client.send_text(leave_msg)

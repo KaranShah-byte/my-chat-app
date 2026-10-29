@@ -18,13 +18,20 @@
 
     <script>
 
-        // 1. Ask for the username
-        var username = prompt("Enter your name to join the chat:");
+        // 1. Ask for the room and the username
+        var roomName = prompt("Enter a room name to join (e.g., General, Study):");
+        if (!roomName) { roomName = "General"; }
+
+        var username = prompt("Enter your name:");
         if (!username) { username = "Anonymous"; }
-        
-        // Check if the site is secure, and use the correct WebSocket protocol
+
+        // 2. Use secure WebSockets (wss://) if on Render, normal (ws://) if local
         var wsProtocol = window.location.protocol === "https:" ? "wss://" : "ws://";
-        var ws = new WebSocket(wsProtocol + window.location.host + "/ws/" + username);
+        
+        // 3. Connect to the backend with BOTH room and username in the URL
+        var ws = new WebSocket(wsProtocol + window.location.host + "/ws/" + roomName + "/" + username);
+        
+
         
         // 2. What to do when a message arrives from the server
         ws.onmessage = function(event) {
