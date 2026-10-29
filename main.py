@@ -1,6 +1,13 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.responses import FileResponse
 
 app = FastAPI()
+
+# NEW: This route serves your HTML page when someone visits the URL
+@app.get("/")
+async def get():
+    return FileResponse("index.html")
+
 
 # This dictionary stores all our active chat rooms
 # Example: {"General": [user1, user2], "DSA-Study": [user3]}
