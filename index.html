@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Real-Time Chat</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 500px; margin: auto; padding: 20px; }
+        #chat-box { height: 300px; border: 1px solid #ccc; overflow-y: scroll; padding: 10px; margin-bottom: 10px; }
+        .message { margin: 5px 0; padding: 8px; background-color: #f1f1f1; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h2>Python Chat App</h2>
+    
+    <div id="chat-box"></div>
+    
+    <input type="text" id="messageText" placeholder="Type a message..." autocomplete="off"/>
+    <button onclick="sendMessage()">Send</button>
+
+    <script>
+        // 1. Establish connection to the Python server
+        var ws = new WebSocket("ws://" + window.location.host + "/ws");
+        
+        // 2. What to do when a message arrives from the server
+        ws.onmessage = function(event) {
+            var chatBox = document.getElementById('chat-box');
+            var messageElement = document.createElement('div');
+            messageElement.className = 'message';
+            messageElement.textContent = event.data;
+            chatBox.appendChild(messageElement);
+            // Scroll to the bottom
+            chatBox.scrollTop = chatBox.scrollHeight;
+        };
+
+        // 3. What to do when you click the Send button
+        function sendMessage() {
+            var input = document.getElementById("messageText");
+            if (input.value.trim() !== "") {
+                ws.send(input.value);
+                input.value = ''; // Clear the input box
+            }
+        }
+    </script>
+</body>
+</html>
