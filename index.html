@@ -17,6 +17,10 @@
     <button onclick="sendMessage()">Send</button>
 
     <script>
+
+        // 1. Ask for the username
+        var username = prompt("Enter your name to join the chat:");
+        if (!username) { username = "Anonymous"; }
         
         // Check if the site is secure, and use the correct WebSocket protocol
         var wsProtocol = window.location.protocol === "https:" ? "wss://" : "ws://";
