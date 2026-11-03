@@ -1,0 +1,10 @@
+# Live Demo Link
+Paste your Render deployment link below:
+
+[YOUR DEPLOYMENT LINK HERE]
+
+## Local Testing Instructions
+1. Clone the repository.
+2. Install dependencies: `pip install -r requirements.txt`
+3. Run server: `uvicorn main:app --reload`
+4. Open `http://127.0.0.1:8000` in your browser.
