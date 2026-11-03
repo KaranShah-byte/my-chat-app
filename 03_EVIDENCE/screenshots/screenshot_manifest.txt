@@ -1,7 +1,7 @@
 MANIFEST OF VISUAL EVIDENCE
 
 1. render_build_error_missing_reqs.png
-   - Shows the initial Render CI/CD pipeline failure due to the missing requirements.txt file.
+   
 
 2. render_linux_cross_platform_error.png
    - Documents the pywin32 distribution mismatch between local Windows development and cloud Linux deployment.
