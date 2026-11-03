@@ -3,7 +3,6 @@ Paste your Render deployment link below:
 
 https://my-chat-app-7kqe.onrender.com/
 
-[YOUR DEPLOYMENT LINK HERE]
 
 ## Local Testing Instructions
 1. Clone the repository.
